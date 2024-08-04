@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { EEPROM } from './eeprom';
-import { HMAC_SHA1, RC4, SHA1 } from './xboxCrypt';
-import { get } from 'node:http';
+import { HMAC_SHA1 } from './xboxCrypt';
+import copyPaste from 'copy-paste';
 
 const program = new Command();
 
@@ -45,11 +45,27 @@ if (!options.file || !options.serial || !options.model) {
         console.log(`EEPROM HDD Key: ${eeprom.getHDDKey().toString('hex').toUpperCase()}`);
         console.log(`EEPROM Region: ${eeprom.getRegion()}`);
         console.log(`EEPROM kernel version: ${eeprom.getKernelVersion()}`);
-        let hddPass = HMAC_SHA1(eeprom.getHDDKey(), Buffer.from(options.model + options.serial, 'utf8')).toString(
-            'hex'
-        );
-        console.log(`HDD Password (20bytes): ${hddPass}`);
+        let hddPass = HMAC_SHA1(eeprom.getHDDKey(), Buffer.from(options.model + options.serial, 'utf8'));
+        console.log('HDD Password Bytes (20bytes): ', hddPass);
+        console.log(`HDD Password HEX String (20bytes): [${hddPass.toString('hex').toUpperCase()}]`);
+        console.log(`HDD Password String (20bytes): [${hddPass.toString('utf8')}]`);
+        //console.log(`HDD PASS: [${Buffer.from('883919cb2dd935aa74b06a532222a88a3ab7451b', 'hex').toString()}]`);
         //console.log(`HDD Password (32bytes): ${hddPass}`);
+        copyPaste.copy(hddPass.toString(), (err) => {
+            if (err) {
+                console.error(err);
+            } else {
+                copyPaste.paste((err, content) => {
+                    if (err) {
+                        console.error(err);
+                    } else if (content === hddPass.toString()) {
+                        console.log('HDD Password copied to clipboard!');
+                    } else {
+                        console.error('Error copying HDD Password to clipboard!');
+                    }
+                });
+            }
+        });
     } catch (error) {
         console.error((error as Error).message);
         console.error(error);
