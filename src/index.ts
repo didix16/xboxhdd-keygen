@@ -9,9 +9,9 @@ program
     .version('1.0.0')
     .description('A tool to generate an OG Xbox HDD Key using EEPROM')
     .option('-f, --file <file>', 'Path to the EEPROM file')
-    .option('-o, --output <output>', 'Output format (hex, bin).', 'hex')
     .option('-s, --serial <serial>', 'Serial number of the HDD')
-    .option('-m, --model <model>', 'Model of the HDD');
+    .option('-m, --model <model>', 'Model of the HDD')
+    .option('-c', 'Copy the generated HDD Password to clipboard', false);
 
 program.parse();
 
@@ -20,6 +20,14 @@ const options = program.opts();
 if (!options.file || !options.serial || !options.model) {
     program.help();
 } else {
+    if (options.serial.length > 20) {
+        console.error('Serial number must be less or equal than 20 characters!');
+        process.exit(1);
+    }
+    if (options.model.length > 40) {
+        console.error('Model must be less or equal than 40 characters!');
+        process.exit(1);
+    }
     try {
         const eeprom = new EEPROM(options.file);
         // TESTS
@@ -46,19 +54,19 @@ if (!options.file || !options.serial || !options.model) {
         console.log(`EEPROM Region: ${eeprom.getRegion()}`);
         console.log(`EEPROM kernel version: ${eeprom.getKernelVersion()}`);
         let hddPass = HMAC_SHA1(eeprom.getHDDKey(), Buffer.from(options.model + options.serial, 'utf8'));
-        console.log('HDD Password Bytes (20bytes): ', hddPass);
-        console.log(`HDD Password HEX String (20bytes): [${hddPass.toString('hex').toUpperCase()}]`);
-        console.log(`HDD Password String (20bytes): [${hddPass.toString('utf8')}]`);
-        //console.log(`HDD PASS: [${Buffer.from('883919cb2dd935aa74b06a532222a88a3ab7451b', 'hex').toString()}]`);
-        //console.log(`HDD Password (32bytes): ${hddPass}`);
-        copyPaste.copy(hddPass.toString(), (err) => {
+        hddPass = Buffer.concat([hddPass, Buffer.alloc(32 - hddPass.length, 0)]);
+        console.log(`HDD Password HEX String (32bytes, 64 chars): ${hddPass.toString('hex').toUpperCase()}`);
+        if (!options.c) {
+            process.exit(0);
+        }
+        copyPaste.copy(hddPass.toString('hex').toUpperCase(), (err) => {
             if (err) {
                 console.error(err);
             } else {
                 copyPaste.paste((err, content) => {
                     if (err) {
                         console.error(err);
-                    } else if (content === hddPass.toString()) {
+                    } else if (content === hddPass.toString('hex').toUpperCase()) {
                         console.log('HDD Password copied to clipboard!');
                     } else {
                         console.error('Error copying HDD Password to clipboard!');

@@ -305,16 +305,16 @@ function HMAC_SHA1(key: Buffer, ...data: Buffer[]): Buffer {
     let o_key_pad = Buffer.alloc(64 + 20);
 
     let i;
-    for (i = 0x40 - 1; i >= key.length; --i) i_key_pad[i] = 0x36;
-    for (; i >= 0; --i) i_key_pad[i] = key[i] ^ 0x36;
+    for (i = 0x40 - 1; i >= k.length; --i) i_key_pad[i] = 0x36;
+    for (; i >= 0; --i) i_key_pad[i] = k[i] ^ 0x36;
 
     // concat all data
     let dataBuffer = Buffer.concat([i_key_pad, ...data]);
     sha1.update(dataBuffer);
     let innerHash: Buffer = sha1.digest();
 
-    for (i = 0x40 - 1; i >= key.length; --i) o_key_pad[i] = 0x5c;
-    for (; i >= 0; --i) o_key_pad[i] = key[i] ^ 0x5c;
+    for (i = 0x40 - 1; i >= k.length; --i) o_key_pad[i] = 0x5c;
+    for (; i >= 0; --i) o_key_pad[i] = k[i] ^ 0x5c;
 
     o_key_pad.set(innerHash, 64);
 
